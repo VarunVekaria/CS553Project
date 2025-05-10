@@ -1,0 +1,37 @@
+Start your three backend servers (each in its own terminal):
+uvicorn backend:app --host 0.0.0.0 --port 8001
+uvicorn backend:app --host 0.0.0.0 --port 8002
+uvicorn backend:app --host 0.0.0.0 --port 8003
+
+
+Launch your smart load-balancer (in a fourth terminal):
+uvicorn load_balancer:app --host 0.0.0.0 --port 8080 --workers 2
+
+
+Run Prometheus, pointing it at your prometheus.yml:
+Change the prometheus.yml to what is given in this file.
+
+then in terminal:
+prometheus --config.file=prometheus.yml
+
+
+Start Grafana for dashboards:
+in terminal: grafana-server
+Then browse to http://localhost:3000, add Prometheus (http://localhost:9090) as a data source.
+
+Generate traffic with Apache Benchmark against the LB:
+# light load
+ab -n 1000  -c 10  http://localhost:8080/test
+
+# medium load
+ab -n 5000  -c 50  http://localhost:8080/test
+
+# heavy load
+ab -n 20000 -c 200 http://localhost:8080/test
+
+Wait ~5 seconds for Prometheus to scrape all /metrics endpoints.
+
+Fetch and print your key metrics:
+in console  ---> python prometheus_log_exporter.py
+
+In Grafana you can use promQL to generate (throughput, latency, error rate, backend distribution) graphs.
